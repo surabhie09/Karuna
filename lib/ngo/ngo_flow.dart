@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Note: You must add the import for 'ngo_chat_screen.dart' here for compilation.
+import 'ngo_chat_screen.dart';
 
 // --- MOCK DATA STRUCTURES (Copied from main.dart for compilation safety) ---
 
@@ -55,9 +57,97 @@ final List<Donation> mockReceivedPledges = [
 ];
 
 
-// ***************************************************************
-// --- NEW WIDGETS: NGO DRAWER AND SETTING TILE ---
-// ***************************************************************
+// --- NGO HOME SCREEN (The main entry for NGO users) ---
+
+class NgoHomeScreen extends StatefulWidget {
+  const NgoHomeScreen({super.key});
+
+  @override
+  State<NgoHomeScreen> createState() => _NgoHomeScreenState();
+}
+
+class _NgoHomeScreenState extends State<NgoHomeScreen> {
+  int _selectedIndex = 0;
+
+  // New list of tabs, Chat is at index 2
+  static final List<Widget> _widgetOptions = <Widget>[
+    NgoDashboard(ngo: currentNgo),
+    const NgoRequestsScreen(),
+    const NgoChatScreen(), // <--- NEW CHAT SCREEN at Index 2
+    const NgoProfileScreen(), // <--- Profile shifted to Index 3
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  String _getPageTitle() {
+    switch (_selectedIndex) {
+      case 0:
+        return 'NGO Dashboard';
+      case 1:
+        return 'Pledge Management';
+      case 2:
+        return 'Chat with Donors'; // <--- NEW TITLE
+      case 3:
+        return 'My NGO Profile'; // <--- INDEX SHIFTED
+      default:
+        return 'NGO Connect';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_getPageTitle()),
+        backgroundColor: Colors.teal.shade700,
+        elevation: 4,
+        actions: [
+          // Optional: Add notification button here if needed
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
+            onPressed: () {
+              // TODO: Navigate to Notification Screen
+            },
+          ),
+        ],
+      ),
+      drawer: const NgoAppDrawer(),
+      body: _widgetOptions.elementAt(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'Pledges',
+          ),
+          BottomNavigationBarItem( // <--- NEW CHAT ITEM
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        backgroundColor: Colors.white,
+        elevation: 8,
+      ),
+    );
+  }
+}
+
+// --- NGO DRAWER AND SETTING TILE (Unchanged) ---
 
 class NgoAppDrawer extends StatelessWidget {
   const NgoAppDrawer({super.key});
@@ -133,93 +223,8 @@ class _SettingTile extends StatelessWidget {
   }
 }
 
-// ***************************************************************
-// --- NGO HOME SCREEN (UPDATE WITH DRAWER) ---
-// ***************************************************************
 
-class NgoHomeScreen extends StatefulWidget {
-  const NgoHomeScreen({super.key});
-
-  @override
-  State<NgoHomeScreen> createState() => _NgoHomeScreenState();
-}
-
-class _NgoHomeScreenState extends State<NgoHomeScreen> {
-  int _selectedIndex = 0;
-
-  static final List<Widget> _widgetOptions = <Widget>[
-    NgoDashboard(ngo: currentNgo),
-    const NgoRequestsScreen(),
-    const NgoProfileScreen(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  String _getPageTitle() {
-    switch (_selectedIndex) {
-      case 0:
-        return 'NGO Dashboard';
-      case 1:
-        return 'Pledge Management';
-      case 2:
-        return 'My NGO Profile';
-      default:
-        return 'NGO Connect';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_getPageTitle()),
-        backgroundColor: Colors.teal.shade700,
-        elevation: 4,
-        actions: [
-          // Optional: Add notification button here if needed
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {
-              // TODO: Navigate to Notification Screen
-            },
-          ),
-        ],
-      ),
-      drawer: const NgoAppDrawer(), // <--- DRAWER ADDED HERE
-      body: _widgetOptions.elementAt(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Pledges',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        backgroundColor: Colors.white,
-        elevation: 8,
-      ),
-    );
-  }
-}
-
-// ***************************************************************
-// --- 1. NGO DASHBOARD (UNCHANGED) ---
-// ***************************************************************
+// --- 1. NGO DASHBOARD ---
 
 class NgoDashboard extends StatelessWidget {
   final Ngo ngo;
@@ -377,9 +382,7 @@ class _PledgeTile extends StatelessWidget {
   }
 }
 
-// ***************************************************************
-// --- 2. PLEDGE MANAGEMENT SCREEN (UNCHANGED) ---
-// ***************************************************************
+// --- 2. PLEDGE MANAGEMENT SCREEN ---
 
 class NgoRequestsScreen extends StatelessWidget {
   const NgoRequestsScreen({super.key});
@@ -480,9 +483,7 @@ class _PledgeManagementTile extends StatelessWidget {
   }
 }
 
-// ***************************************************************
-// --- 3. NGO PROFILE SCREEN (UNCHANGED) ---
-// ***************************************************************
+// --- 3. NGO PROFILE SCREEN ---
 
 class NgoProfileScreen extends StatelessWidget {
   const NgoProfileScreen({super.key});

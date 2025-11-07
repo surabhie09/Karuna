@@ -8,7 +8,7 @@ import 'profile_edit_screen.dart';
 import 'post_detail_screen.dart';
 import 'donation_form_screen.dart';
 import 'signup_screen.dart';
-import 'ngo_flow.dart'; // Keep the original NGO flow import
+import 'ngo/ngo_flow.dart'; 
 
 // --- MAIN APP ENTRY POINT ---
 

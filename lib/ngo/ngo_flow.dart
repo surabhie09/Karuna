@@ -398,19 +398,183 @@ class NgoRequestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: const Column(
+          children: [
+            TabBar(
+              labelColor: Colors.teal,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Colors.teal,
+              tabs: [
+                Tab(text: 'Ongoing', icon: Icon(Icons.hourglass_bottom)),
+                Tab(text: 'Pending', icon: Icon(Icons.pending)),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _OngoingPledgesTab(),
+                  _PendingPledgesTab(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- ONGOING PLEDGES TAB ---
+
+class _OngoingPledgesTab extends StatelessWidget {
+  const _OngoingPledgesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final ongoingPledges = mockReceivedPledges.where((pledge) => pledge.status == 'Received').toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Manage Donor Pledges', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text('Ongoing Pledges (${ongoingPledges.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          Text('You have ${mockReceivedPledges.length} active and past pledges.', style: TextStyle(color: Colors.grey.shade600)),
-          const Divider(height: 30),
-          
-          // List of Pledges
-          ...mockReceivedPledges.map((pledge) => _PledgeManagementTile(pledge: pledge)).toList(),
+          if (ongoingPledges.isEmpty)
+            const Center(child: Text('No ongoing pledges.', style: TextStyle(color: Colors.grey)))
+          else
+            ...ongoingPledges.map((pledge) => _OngoingPledgeTile(pledge: pledge)).toList(),
         ],
+      ),
+    );
+  }
+}
+
+// --- ONGOING PLEDGE TILE ---
+
+class _OngoingPledgeTile extends StatelessWidget {
+  final Donation pledge;
+  const _OngoingPledgeTile({required this.pledge});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 15),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  pledge.item,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Chip(
+                  label: Text(pledge.status, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  backgroundColor: Colors.green.shade600,
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Text('Pledged on: ${pledge.date}', style: TextStyle(color: Colors.grey.shade600)),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Mock action to chat with donor
+                  },
+                  icon: const Icon(Icons.chat, size: 18, color: Colors.white),
+                  label: const Text('Chat with Donor', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade500),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Mock action to mark as complete
+                  },
+                  icon: const Icon(Icons.done_all, size: 18, color: Colors.black87),
+                  label: const Text('Mark Complete', style: TextStyle(color: Colors.black87)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade400),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- PENDING PLEDGES TAB ---
+
+class _PendingPledgesTab extends StatelessWidget {
+  const _PendingPledgesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final pendingPledges = mockReceivedPledges.where((pledge) => pledge.status == 'Pending Pickup').toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Pending Pledges (${pendingPledges.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          if (pendingPledges.isEmpty)
+            const Center(child: Text('No pending pledges.', style: TextStyle(color: Colors.grey)))
+          else
+            ...pendingPledges.map((pledge) => _PendingPledgeTile(pledge: pledge)).toList(),
+        ],
+      ),
+    );
+  }
+}
+
+// --- PENDING PLEDGE TILE ---
+
+class _PendingPledgeTile extends StatelessWidget {
+  final Donation pledge;
+  const _PendingPledgeTile({required this.pledge});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 15),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  pledge.item,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Chip(
+                  label: Text(pledge.status, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  backgroundColor: Colors.orange.shade600,
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Text('Pledged on: ${pledge.date}', style: TextStyle(color: Colors.grey.shade600)),
+          ],
+        ),
       ),
     );
   }

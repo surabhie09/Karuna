@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
+import 'models.dart';
 
 // --- LOGIN SCREEN (For Donor or NGO Login based on navigation) ---
 
@@ -16,6 +19,14 @@ class _LoginScreenState extends State<LoginScreen> {
   late String _route;
   late String _message;
 
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  bool _isLoading = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -32,13 +43,52 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _submitForm() {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_message)),
-      );
-      // Navigate to respective Home
-      Navigator.pushNamedAndRemoveUntil(context, _route, (route) => false);
+      setState(() => _isLoading = true);
+
+      try {
+        // Sign in with Firebase Auth
+        final userCredential = await _authService.signIn(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+        // Fetch user data from Firestore to verify user type
+        final userDoc = await _firestoreService.getUser(userCredential.user!.uid);
+        if (userDoc != null && userDoc['userType'] == _userType) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_message)),
+            );
+            // Navigate to respective Home
+            Navigator.pushNamedAndRemoveUntil(context, _route, (route) => false);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Invalid user type for this login.')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login failed: ${e.toString()}')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -57,11 +107,13 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: <Widget>[
-              _buildTextField(context, 'Email Address', Icons.mail, keyboardType: TextInputType.emailAddress),
+              _buildTextField(context, 'Email Address', Icons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
               const SizedBox(height: 15),
-              _buildTextField(context, 'Password', Icons.lock, isPassword: true),
+              _buildPasswordField(context, 'Password', _passwordController),
               const SizedBox(height: 20),
-              _buildLoginButton(context, 'Login', _submitForm),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : _buildLoginButton(context, 'Login', _submitForm),
             ],
           ),
         ),
@@ -80,14 +132,32 @@ InputDecoration _inputDecoration(BuildContext context, String label, IconData ic
   );
 }
 
-Widget _buildTextField(BuildContext context, String label, IconData icon, {TextInputType keyboardType = TextInputType.text, bool isPassword = false}) {
+Widget _buildTextField(BuildContext context, String label, IconData icon, {TextInputType keyboardType = TextInputType.text, bool isPassword = false, TextEditingController? controller}) {
   return TextFormField(
+    controller: controller,
     keyboardType: keyboardType,
     obscureText: isPassword,
     decoration: _inputDecoration(context, label, icon),
     validator: (value) {
       if (value == null || value.isEmpty) {
         return 'Please enter your $label';
+      }
+      return null;
+    },
+  );
+}
+
+Widget _buildPasswordField(BuildContext context, String label, TextEditingController controller) {
+  return TextFormField(
+    controller: controller,
+    obscureText: true,
+    decoration: _inputDecoration(context, label, Icons.lock),
+    validator: (value) {
+      if (value == null || value.isEmpty) {
+        return 'Please enter your $label';
+      }
+      if (value.length < 6) {
+        return 'Password must be at least 6 characters';
       }
       return null;
     },

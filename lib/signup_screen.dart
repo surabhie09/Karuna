@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
-// Import models for NGO categories, if needed later
-// import 'models.dart'; 
+import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
+import 'models.dart';
 
 // --- SIGN UP SCREEN (For Donor and NGO Registration) ---
 
@@ -51,21 +51,63 @@ class _DonorSignUpForm extends StatefulWidget {
 class _DonorSignUpFormState extends State<_DonorSignUpForm> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _contactController = TextEditingController();
+
+  final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _contactController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Simulate account creation
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Donor account created! Please log in.')),
-      );
-      // Navigate to Donor Login
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false, arguments: {'userType': 'donor'});
+      setState(() => _isLoading = true);
+
+      try {
+        // Create user with Firebase Auth
+        final userCredential = await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+        // Add user data to Firestore
+        await _firestoreService.addUser(userCredential.user!.uid, {
+          'email': _emailController.text.trim(),
+          'userType': 'donor',
+          'name': _nameController.text.trim(),
+          'contact': _contactController.text.trim(),
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Donor account created! Please log in.')),
+          );
+          // Navigate to Donor Login
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false, arguments: {'userType': 'donor'});
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -77,17 +119,19 @@ class _DonorSignUpFormState extends State<_DonorSignUpForm> {
         key: _formKey,
         child: Column(
           children: <Widget>[
-            _buildTextField(context, 'Full Name', Icons.person),
+            _buildTextField(context, 'Full Name', Icons.person, controller: _nameController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Email Address', Icons.mail, keyboardType: TextInputType.emailAddress),
+            _buildTextField(context, 'Email Address', Icons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Contact Number', Icons.phone, keyboardType: TextInputType.phone),
+            _buildTextField(context, 'Contact Number', Icons.phone, keyboardType: TextInputType.phone, controller: _contactController),
             const SizedBox(height: 15),
             _buildPasswordField(context, 'Password', _passwordController),
             const SizedBox(height: 15),
-            _buildPasswordField(context, 'Confirm Password', TextEditingController(), isConfirm: true, compareController: _passwordController),
+            _buildPasswordField(context, 'Confirm Password', _confirmPasswordController, isConfirm: true, compareController: _passwordController),
             const SizedBox(height: 20),
-            _buildSignUpButton(context, 'Register as Donor', _submitForm),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : _buildSignUpButton(context, 'Register as Donor', _submitForm),
           ],
         ),
       ),
@@ -110,14 +154,82 @@ class _NgoSignUpFormState extends State<_NgoSignUpForm> {
   String? _selectedCategory;
   final List<String> categories = ['Education', 'Health', 'Environment', 'Animal Welfare', 'Disaster Relief', 'Other'];
 
-  void _submitForm() {
+  final _ngoNameController = TextEditingController();
+  final _registrationIdController = TextEditingController();
+  final _contactPersonController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _ngoNameController.dispose();
+    _registrationIdController.dispose();
+    _contactPersonController.dispose();
+    _emailController.dispose();
+    _locationController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Simulate NGO registration submission
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NGO registration submitted for approval! Please log in.')),
-      );
-      // Navigate to NGO Login
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false, arguments: {'userType': 'ngo'});
+      setState(() => _isLoading = true);
+
+      try {
+        // Create user with Firebase Auth
+        final userCredential = await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+        // Add NGO data to Firestore
+        await _firestoreService.addNgo({
+          'name': _ngoNameController.text.trim(),
+          'registrationId': _registrationIdController.text.trim(),
+          'category': _selectedCategory,
+          'contactPerson': _contactPersonController.text.trim(),
+          'email': _emailController.text.trim(),
+          'area': _locationController.text.trim(),
+          'need': '', // Will be updated later
+          'rating': 0.0,
+          'imageUrl': 'https://placehold.co/600x400/228B22/ffffff?text=NGO',
+          'description': 'New NGO registration pending approval.',
+          'status': 'pending', // For admin approval
+        });
+
+        // Add user data to Firestore
+        await _firestoreService.addUser(userCredential.user!.uid, {
+          'email': _emailController.text.trim(),
+          'userType': 'ngo',
+          'name': _contactPersonController.text.trim(),
+          'contact': '',
+          'ngoId': '', // Will be set after NGO approval
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('NGO registration submitted for approval! Please log in.')),
+          );
+          // Navigate to NGO Login
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false, arguments: {'userType': 'ngo'});
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -129,21 +241,23 @@ class _NgoSignUpFormState extends State<_NgoSignUpForm> {
         key: _formKey,
         child: Column(
           children: <Widget>[
-            _buildTextField(context, 'NGO/Organization Name', Icons.business),
+            _buildTextField(context, 'NGO/Organization Name', Icons.business, controller: _ngoNameController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Registration ID / Number', Icons.credit_card),
+            _buildTextField(context, 'Registration ID / Number', Icons.credit_card, controller: _registrationIdController),
             const SizedBox(height: 15),
             _buildDropdownField(context),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Contact Person Name', Icons.person_outline),
+            _buildTextField(context, 'Contact Person Name', Icons.person_outline, controller: _contactPersonController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'NGO Email (for communications)', Icons.mail, keyboardType: TextInputType.emailAddress),
+            _buildTextField(context, 'NGO Email (for communications)', Icons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Location (City, State)', Icons.location_on),
+            _buildTextField(context, 'Location (City, State)', Icons.location_on, controller: _locationController),
             const SizedBox(height: 15),
-            _buildTextField(context, 'Password', Icons.lock, isPassword: true),
+            _buildPasswordField(context, 'Password', _passwordController),
             const SizedBox(height: 20),
-            _buildSignUpButton(context, 'Register as NGO', _submitForm),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : _buildSignUpButton(context, 'Register as NGO', _submitForm),
           ],
         ),
       ),
@@ -182,8 +296,9 @@ InputDecoration _inputDecoration(BuildContext context, String label, IconData ic
   );
 }
 
-Widget _buildTextField(BuildContext context, String label, IconData icon, {TextInputType keyboardType = TextInputType.text, bool isPassword = false}) {
+Widget _buildTextField(BuildContext context, String label, IconData icon, {TextInputType keyboardType = TextInputType.text, bool isPassword = false, TextEditingController? controller}) {
   return TextFormField(
+    controller: controller,
     keyboardType: keyboardType,
     obscureText: isPassword,
     decoration: _inputDecoration(context, label, icon),

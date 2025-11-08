@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 // --- IMPORT ALL SCREENS & MODELS ---
+import 'firebase_options.dart';
 import 'models.dart';
 import 'welcome_screen.dart';
 import 'donor_home_flow.dart';
@@ -13,7 +18,29 @@ import 'ngo/ngo_flow.dart';
 
 // --- MAIN APP ENTRY POINT ---
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: kIsWeb
+      ? const FirebaseOptions(
+          apiKey: 'AIzaSyAnWcqu758uVnUQ_1DC5nYOEBiqIJGJQ1U',
+          appId: '1:624229847509:web:83ac7a99cedc86c5c5ad5c',
+          messagingSenderId: '624229847509',
+          projectId: 'my-ngo-pledges',
+          authDomain: 'my-ngo-pledges.firebaseapp.com',
+          storageBucket: 'my-ngo-pledges.firebasestorage.app',
+        )
+      : DefaultFirebaseOptions.currentPlatform,
+  );
+  if (kIsWeb) {
+    // Use Firebase emulators for web
+    await FirebaseAuth.instance.useAuthEmulator('127.0.0.1', 9099);
+    FirebaseFirestore.instance.settings = const Settings(
+      host: '127.0.0.1:8082',
+      sslEnabled: false,
+      persistenceEnabled: false,
+    );
+  }
   runApp(const NgoConnectApp());
 }
 

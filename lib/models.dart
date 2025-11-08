@@ -35,6 +35,20 @@ class Donation {
   });
 }
 
+class Pledge {
+  final String id;
+  final String title;
+  final String ngoName;
+  final String location;
+
+  Pledge({
+    required this.id,
+    required this.title,
+    required this.ngoName,
+    required this.location,
+  });
+}
+
 // Mock Data Source
 final List<Ngo> mockNgos = [
   Ngo(id: '1', name: 'Clean Rivers Initiative', category: 'Environment', area: 'Mumbai', need: 'Water filters, Volunteers', rating: 4.8, imageUrl: 'https://placehold.co/600x400/228B22/ffffff?text=River+Clean', description: 'Working to clean up local rivers and educate communities on waste management and pollution control.'),
@@ -47,4 +61,9 @@ final List<Donation> mockDonationHistory = [
   Donation(ngoName: 'Future Leaders Academy', item: '₹1000 (Monetary)', date: 'Oct 15, 2024', status: 'Completed'),
   Donation(ngoName: 'Clean Rivers Initiative', item: '5 Water Filters (In-kind)', date: 'Sep 28, 2024', status: 'Ongoing Pickup'),
   Donation(ngoName: 'Pet Haven Shelter', item: '10 Kg Dog Food', date: 'Aug 01, 2024', status: 'Completed'),
+];
+
+final List<Pledge> mockAcceptedPledges = [
+  Pledge(id: '1', title: 'Water Filters for Clean Rivers Initiative', ngoName: 'Clean Rivers Initiative', location: 'Mumbai'),
+  Pledge(id: '2', title: 'Notebooks for Future Leaders Academy', ngoName: 'Future Leaders Academy', location: 'Delhi'),
 ];

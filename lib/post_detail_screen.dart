@@ -61,12 +61,17 @@ class PostDetailScreen extends StatelessWidget {
             const SizedBox(height: 30),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pushNamed(context, '/donationForm', arguments: selectedNgo);
+                // Simulate donation pledge
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Donation pledged successfully! Check your Chats tab.')),
+                );
+                // Navigate back to Home
+                Navigator.pop(context);
               },
               icon: const Icon(Icons.favorite_rounded, color: Colors.white),
               label: const Text('Pledge Donation', style: TextStyle(fontSize: 18, color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).hintColor, 
+                backgroundColor: Theme.of(context).hintColor,
                 minimumSize: const Size(double.infinity, 55),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),

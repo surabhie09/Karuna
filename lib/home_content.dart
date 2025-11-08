@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'models.dart'; // Import Ngo model
+import 'chat_screen.dart'; // Import ChatDetailScreen
 
 // --- HOME CONTENT (THE DONOR LANDING PAGE) ---
 
@@ -109,7 +110,12 @@ class HomeContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // 4. Impact Stories/Reviews
+          // 4. Accepted Pledges
+          const SectionHeader(title: 'Accepted Pledges'),
+          _AcceptedPledges(),
+          const SizedBox(height: 20),
+
+          // 5. Impact Stories/Reviews
           const SectionHeader(title: 'Your Impact in Action (Reviews)'),
           _ImpactStories(),
           const SizedBox(height: 30),
@@ -219,10 +225,6 @@ class _NgoCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      Text(ngo.rating.toString(), style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-                      const Spacer(),
                       Text(ngo.area, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
                     ],
                   ),
@@ -236,6 +238,85 @@ class _NgoCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Helper for Accepted Pledges
+class _AcceptedPledges extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 150,
+      margin: const EdgeInsets.only(left: 16.0),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: mockAcceptedPledges.length,
+        itemBuilder: (context, index) {
+          final pledge = mockAcceptedPledges[index];
+          return _PledgeCard(pledge: pledge);
+        },
+      ),
+    );
+  }
+}
+
+class _PledgeCard extends StatelessWidget {
+  final Pledge pledge;
+  const _PledgeCard({required this.pledge});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 200,
+      margin: const EdgeInsets.only(right: 16.0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.teal.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            pledge.title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            pledge.ngoName,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 12, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(
+                pledge.location,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+          const Spacer(),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Navigate to individual chat screen
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatDetailScreen(ngoName: pledge.ngoName)));
+            },
+            icon: const Icon(Icons.chat, size: 16, color: Colors.white),
+            label: const Text('Chat', style: TextStyle(fontSize: 12, color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              minimumSize: const Size(double.infinity, 30),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+          ),
+        ],
       ),
     );
   }

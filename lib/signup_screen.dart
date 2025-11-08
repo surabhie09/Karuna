@@ -139,6 +139,8 @@ class _NgoSignUpFormState extends State<_NgoSignUpForm> {
             const SizedBox(height: 15),
             _buildTextField(context, 'NGO Email (for communications)', Icons.mail, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 15),
+            _buildTextField(context, 'Location (City, State)', Icons.location_on),
+            const SizedBox(height: 15),
             _buildTextField(context, 'Password', Icons.lock, isPassword: true),
             const SizedBox(height: 20),
             _buildSignUpButton(context, 'Register as NGO', _submitForm),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // Note: You must add the import for 'ngo_chat_screen.dart' here for compilation.
 import 'ngo_chat_screen.dart';
+import 'ngo_profile_edit_screen.dart';
 
 // --- MOCK DATA STRUCTURES (Copied from main.dart for compilation safety) ---
 
@@ -485,55 +486,166 @@ class _PledgeManagementTile extends StatelessWidget {
 
 // --- 3. NGO PROFILE SCREEN ---
 
-class NgoProfileScreen extends StatelessWidget {
+class NgoProfileScreen extends StatefulWidget {
   const NgoProfileScreen({super.key});
 
   @override
+  State<NgoProfileScreen> createState() => _NgoProfileScreenState();
+}
+
+class _NgoProfileScreenState extends State<NgoProfileScreen> {
+  // Mock State Data for editable fields
+  String ngoName = currentNgo.name;
+  String ngoContact = '+91 98765 43210'; // Mock contact
+  String ngoBio = 'Dedicated to empowering underprivileged children through quality education and skill development programs.'; // Mock bio
+  String ngoWebsite = 'futureleaders.org';
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
+    final int totalPledges = mockReceivedPledges.length;
+    final int completedPledges = mockReceivedPledges.where((d) => d.status == 'Completed').length;
+
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile Header
+            Container(
+              padding: const EdgeInsets.all(24),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+              ),
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.business_center, size: 60, color: Colors.teal),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(ngoName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text('NGO ID: ${currentNgo.id}', style: TextStyle(color: Colors.teal.shade100, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('Total Impact: $completedPledges Completed Pledges', style: TextStyle(color: Colors.teal.shade100, fontSize: 16)),
+                  const SizedBox(height: 12),
+                  // Edit Button
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit, size: 18, color: Colors.white),
+                    label: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+                    onPressed: () async {
+                      final updatedData = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NgoProfileEditScreen(),
+                          settings: RouteSettings(arguments: {
+                            'name': ngoName,
+                            'contact': ngoContact,
+                            'bio': ngoBio,
+                            'website': ngoWebsite,
+                          }),
+                        ),
+                      ) as Map<String, String>?;
+
+                      if (updatedData != null) {
+                        setState(() {
+                          ngoName = updatedData['name'] ?? ngoName;
+                          ngoContact = updatedData['contact'] ?? ngoContact;
+                          ngoBio = updatedData['bio'] ?? ngoBio;
+                          ngoWebsite = updatedData['website'] ?? ngoWebsite;
+                        });
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+
+            // Core Details
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Contact & Bio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  _NgoDetailTile(icon: Icons.phone, label: 'Contact', value: ngoContact),
+                  _NgoDetailTile(icon: Icons.info_outline, label: 'Bio', value: ngoBio),
+                  _NgoDetailTile(icon: Icons.public, label: 'Website', value: ngoWebsite),
+                  const Divider(height: 30),
+
+                  // Pledge History
+                  const Text('Pledge Activity', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  DefaultTabController(
+                    length: 3,
+                    initialIndex: 0,
+                    child: Column(
+                      children: [
+                        const TabBar(
+                          labelColor: Colors.teal,
+                          unselectedLabelColor: Colors.grey,
+                          indicatorColor: Colors.teal,
+                          tabs: [
+                            Tab(text: 'Pending'),
+                            Tab(text: 'Ongoing'),
+                            Tab(text: 'History'),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 300,
+                          child: TabBarView(
+                            children: [
+                              // Pending Pledges
+                              _PledgeActivityList(
+                                  pledges: mockReceivedPledges.where((p) => p.status.contains('Pending')).toList()),
+                              // Ongoing Pledges
+                              _PledgeActivityList(
+                                  pledges: mockReceivedPledges.where((p) => p.status.contains('Received')).toList()),
+                              // History (Completed)
+                              _PledgeActivityList(
+                                  pledges: mockReceivedPledges.where((p) => p.status.contains('Completed')).toList()),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Helper: NGO Detail Tile
+class _NgoDetailTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _NgoDetailTile({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.teal.shade100,
-              child: const Icon(Icons.business_center, size: 50, color: Colors.teal),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: Text(currentNgo.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          ),
-          Center(
-            child: Text(currentNgo.category, style: TextStyle(color: Colors.teal.shade600, fontSize: 16)),
-          ),
-          const SizedBox(height: 30),
-
-          const Text('Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Divider(),
-          _DetailTile(icon: Icons.location_on, label: 'Area of Operation', value: currentNgo.area),
-          _DetailTile(icon: Icons.star, label: 'Rating', value: currentNgo.rating.toString()),
-          _DetailTile(icon: Icons.lightbulb_outline, label: 'Key Needs', value: currentNgo.need),
-          _DetailTile(icon: Icons.public, label: 'Website', value: 'futureleaders.org'),
-          
-          const SizedBox(height: 30),
-
-          Center(
-            child: ElevatedButton.icon(
-              // This is a redundant logout button, but kept for full file integrity.
-              // The main logout is now in the drawer.
-              onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false); // Logout
-              },
-              icon: const Icon(Icons.logout, color: Colors.white),
-              label: const Text('Logout', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade400,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+          Icon(icon, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              ],
             ),
           ),
         ],
@@ -542,7 +654,35 @@ class NgoProfileScreen extends StatelessWidget {
   }
 }
 
-// Helper: Detail Tile
+// Helper: Pledge Activity List
+class _PledgeActivityList extends StatelessWidget {
+  final List<Donation> pledges;
+  const _PledgeActivityList({required this.pledges});
+
+  @override
+  Widget build(BuildContext context) {
+    if (pledges.isEmpty) {
+      return const Center(child: Text('No pledges found for this section.', style: TextStyle(color: Colors.grey)));
+    }
+    return ListView.builder(
+      itemCount: pledges.length,
+      itemBuilder: (context, index) {
+        final p = pledges[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: p.status == 'Completed' ? Colors.teal : Colors.deepOrange,
+            child: Icon(p.status == 'Completed' ? Icons.check : Icons.delivery_dining, color: Colors.white),
+          ),
+          title: Text(p.item),
+          subtitle: Text(p.date),
+          trailing: Text(p.status.split('(').first.trim(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: p.status == 'Completed' ? Colors.green.shade700 : Colors.deepOrange)),
+        );
+      },
+    );
+  }
+}
+
+// Helper: Detail Tile (for backward compatibility)
 class _DetailTile extends StatelessWidget {
   final IconData icon;
   final String label;
